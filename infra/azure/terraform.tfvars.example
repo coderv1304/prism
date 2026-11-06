@@ -1,0 +1,16 @@
+# Copy to terraform.tfvars and fill in your own values. Never commit it.
+project_name            = "prism"
+environment             = "prod"
+location                = "eastus"
+container_image_prefix  = "ghcr.io/your-github-owner/prism"
+image_tag               = "latest"
+postgres_sku_name       = "B_Standard_B1ms"
+postgres_storage_mb     = 32768
+redis_capacity          = 1
+web_min_replicas        = 1
+api_min_replicas        = 1
+worker_min_replicas     = 1
+
+extra_tags = {
+  owner = "your-name"
+}

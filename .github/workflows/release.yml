@@ -1,0 +1,254 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
+  workflow_dispatch:
+
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  validate:
+    name: Quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Dependency audit (critical only)
+        run: npm audit --omit=dev --audit-level=critical
+
+      - name: Validate Compose model
+        run: docker compose config --quiet
+
+  changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      worker: ${{ steps.filter.outputs.worker }}
+      web: ${{ steps.filter.outputs.web }}
+      infra: ${{ steps.filter.outputs.infra }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Path filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+              - 'packages/contracts/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/_image.yml'
+            worker:
+              - 'apps/worker/**'
+              - 'packages/contracts/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/_image.yml'
+            web:
+              - 'apps/web/**'
+              - 'packages/contracts/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/_image.yml'
+            infra:
+              - 'infra/**'
+              - '.github/workflows/release.yml'
+
+  build_api:
+    name: Build API image
+    needs: [validate, changes]
+    if: needs.changes.outputs.api == 'true'
+    uses: ./.github/workflows/_image.yml
+    with:
+      image: api
+      dockerfile: apps/api/Dockerfile
+    permissions:
+      contents: read
+      packages: write
+
+  build_worker:
+    name: Build worker image
+    needs: [validate, changes]
+    if: needs.changes.outputs.worker == 'true'
+    uses: ./.github/workflows/_image.yml
+    with:
+      image: worker
+      dockerfile: apps/worker/Dockerfile
+    permissions:
+      contents: read
+      packages: write
+
+  build_web:
+    name: Build web image
+    needs: [validate, changes]
+    if: needs.changes.outputs.web == 'true'
+    uses: ./.github/workflows/_image.yml
+    with:
+      image: web
+      dockerfile: apps/web/Dockerfile
+      build-args: |
+        NEXT_PUBLIC_SITE_URL=${{ vars.PUBLIC_BASE_URL || 'http://localhost:3000' }}
+    permissions:
+      contents: read
+      packages: write
+
+  deploy:
+    name: Deploy to Azure Container Apps
+    runs-on: ubuntu-latest
+    needs: [validate, changes, build_api, build_worker, build_web]
+    if: |
+      always() &&
+      !cancelled() &&
+      needs.validate.result == 'success' &&
+      needs.changes.result == 'success' &&
+      (needs.build_api.result == 'success' || needs.build_api.result == 'skipped') &&
+      (needs.build_worker.result == 'success' || needs.build_worker.result == 'skipped') &&
+      (needs.build_web.result == 'success' || needs.build_web.result == 'skipped') &&
+      (needs.changes.outputs.api == 'true' || needs.changes.outputs.worker == 'true' || needs.changes.outputs.web == 'true') &&
+      vars.DEPLOY_ENABLED == 'true'
+    environment:
+      name: production
+      url: ${{ vars.PUBLIC_BASE_URL }}
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Update changed Container Apps revisions
+        env:
+          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          API_APP: ${{ vars.AZURE_API_APP }}
+          WORKER_APP: ${{ vars.AZURE_WORKER_APP }}
+          WEB_APP: ${{ vars.AZURE_WEB_APP }}
+          API_CHANGED: ${{ needs.changes.outputs.api }}
+          WORKER_CHANGED: ${{ needs.changes.outputs.worker }}
+          WEB_CHANGED: ${{ needs.changes.outputs.web }}
+        run: |
+          set -euo pipefail
+          IMAGE_ROOT="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}"
+          SHA_TAG="sha-${GITHUB_SHA}"
+
+          echo "## Deployment ${SHA_TAG}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Service | Changed | Image |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "${API_CHANGED}" == "true" ]]; then
+            echo "Previous API revision: $(az containerapp revision list -g "$RESOURCE_GROUP" -n "$API_APP" --query '[0].name' -o tsv)" >> "$GITHUB_STEP_SUMMARY"
+            az containerapp update -g "$RESOURCE_GROUP" -n "$API_APP" --image "${IMAGE_ROOT}/prism-api:${SHA_TAG}" --output none
+            echo "| API | yes | \`${IMAGE_ROOT}/prism-api:${SHA_TAG}\` |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "| API | no — image unchanged | — |" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [[ "${WORKER_CHANGED}" == "true" ]]; then
+            az containerapp update -g "$RESOURCE_GROUP" -n "$WORKER_APP" --image "${IMAGE_ROOT}/prism-worker:${SHA_TAG}" --output none
+            echo "| Worker | yes | \`${IMAGE_ROOT}/prism-worker:${SHA_TAG}\` |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "| Worker | no — image unchanged | — |" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [[ "${WEB_CHANGED}" == "true" ]]; then
+            az containerapp update -g "$RESOURCE_GROUP" -n "$WEB_APP" --image "${IMAGE_ROOT}/prism-web:${SHA_TAG}" --output none
+            echo "| Web | yes | \`${IMAGE_ROOT}/prism-web:${SHA_TAG}\` |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "| Web | no — image unchanged | — |" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Wait for the public endpoint and run the smoke test
+        env:
+          BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+        run: |
+          set -euo pipefail
+          echo "Waiting for ${BASE_URL}/api/health"
+          for attempt in $(seq 1 30); do
+            if curl -fsS --max-time 10 "${BASE_URL}/api/health" > /dev/null; then
+              echo "Endpoint is healthy after ${attempt} attempt(s)."
+              break
+            fi
+            if [[ "${attempt}" == "30" ]]; then
+              echo "Endpoint did not become healthy in time."
+              exit 1
+            fi
+            sleep 10
+          done
+          node scripts/smoke-test.mjs
+
+      - name: Record active revisions for rollback
+        if: always()
+        env:
+          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          API_APP: ${{ vars.AZURE_API_APP }}
+          WORKER_APP: ${{ vars.AZURE_WORKER_APP }}
+          WEB_APP: ${{ vars.AZURE_WEB_APP }}
+        run: |
+          set -euo pipefail
+          {
+            echo ""
+            echo "### Active revisions"
+            echo ""
+            echo '```'
+            for app in "$API_APP" "$WORKER_APP" "$WEB_APP"; do
+              az containerapp revision list -g "$RESOURCE_GROUP" -n "$app" \
+                --query "[?properties.active].{name:name,created:properties.createdTime,image:properties.template.containers[0].image}" \
+                -o table || true
+            done
+            echo '```'
+            echo ""
+            echo "Rollback: \`az containerapp ingress traffic set -g \$RESOURCE_GROUP -n \$APP --revision-weight <previous>=100\`"
+            echo "or: \`az containerapp update -g \$RESOURCE_GROUP -n \$APP --image <previous-image>\`."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum JobStatus {
+  QUEUED
+  ACTIVE
+  COMPLETED
+  FAILED
+}
+
+/// PostgreSQL is the source of truth for job state. Redis only carries the
+/// ephemeral queue entry, so a Redis flush can never erase job history.
+model Job {
+  id         String    @id @default(uuid()) @db.Uuid
+  type       String
+  status     JobStatus @default(QUEUED)
+  progress   Int       @default(0)
+  payload    Json
+  result     Json?
+  error      String?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+  startedAt  DateTime?
+  finishedAt DateTime?
+  durationMs Int?
+
+  events JobEvent[]
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@map("jobs")
+}
+
+model JobEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  jobId     String   @db.Uuid
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  kind      String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([jobId, createdAt])
+  @@map("job_events")
+}

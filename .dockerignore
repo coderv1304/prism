@@ -1,0 +1,14 @@
+.git
+.github
+.gitignore
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/*.log
+.env
+.env.*
+!.env.example
+docs
+README.md
+ARCHITECTURE.md

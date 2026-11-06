@@ -1,0 +1,45 @@
+{
+  "name": "prism",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Prism — a production-grade async job platform (Next.js, NestJS, PostgreSQL, Redis, BullMQ).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "build": "npm run build -w @prism/contracts && npm run prisma:generate && npm run build -w @prism/api && npm run build -w @prism/worker && npm run build -w @prism/web",
+    "build:contracts": "npm run build -w @prism/contracts",
+    "dev": "npm run build:contracts && npm run prisma:generate && concurrently -k -n api,worker,web -c magenta,yellow,cyan \"npm:dev:api\" \"npm:dev:worker\" \"npm:dev:web\"",
+    "dev:api": "npm run dev -w @prism/api",
+    "dev:worker": "npm run dev -w @prism/worker",
+    "dev:web": "npm run dev -w @prism/web",
+    "prisma:generate": "npm run prisma:generate -w @prism/api",
+    "lint": "eslint .",
+    "typecheck": "npm run build:contracts && npm run prisma:generate && npm run typecheck -w @prism/contracts && npm run typecheck -w @prism/api && npm run typecheck -w @prism/worker && npm run typecheck -w @prism/web",
+    "test": "npm run build:contracts && npm run prisma:generate && npm run test -w @prism/api && npm run test -w @prism/worker",
+    "smoke": "node scripts/smoke-test.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "db:migrate": "npm run db:migrate -w @prism/api",
+    "db:seed": "npm run db:seed -w @prism/api"
+  },
+  "overrides": {
+    "multer": "^2.5.0",
+    "postcss": "^8.5.32"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.36.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.1"
+  }
+}
