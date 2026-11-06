@@ -59,7 +59,6 @@ resource "azurerm_postgresql_flexible_server" "main" {
   version                = "16"
   administrator_login    = "prismops"
   administrator_password = random_password.postgres.result
-  zone                   = "1"
 
   sku_name   = var.postgres_sku_name
   storage_mb = var.postgres_storage_mb

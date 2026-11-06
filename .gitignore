@@ -33,3 +33,6 @@ test-results/
 *.tfstate
 *.tfstate.*
 .terraform/
+*.tfvars
+*.tfplan
+tfplan
