@@ -29,7 +29,7 @@ region — and keep the policy untouched.
   defensible, but it still needs a governance exception, an expiry and a review
   owner — overhead that buys a marginal latency difference for this workload.
 - `malaysiawest` provides all required services (Container Apps, PostgreSQL
-  Flexible Server, Azure Cache for Redis) and satisfies the "Southeast Asia"
+  Flexible Server, Azure Managed Redis) and satisfies the "Southeast Asia"
   geography in the brief.
 
 **Consequences.** Docs and the walkthrough name `malaysiawest` explicitly, with

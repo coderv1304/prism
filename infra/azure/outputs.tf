@@ -19,8 +19,8 @@ output "postgres_fqdn" {
 }
 
 output "redis_hostname" {
-  description = "Managed Redis hostname (TLS only, port 6380)."
-  value       = azurerm_redis_cache.main.hostname
+  description = "Azure Managed Redis hostname (TLS only)."
+  value       = azurerm_managed_redis.main.hostname
 }
 
 output "container_app_names" {

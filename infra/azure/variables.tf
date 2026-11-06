@@ -45,10 +45,10 @@ variable "postgres_storage_mb" {
   default     = 32768
 }
 
-variable "redis_capacity" {
-  description = "Azure Cache for Redis capacity (1 = 1 GB on the Basic tier)."
-  type        = number
-  default     = 1
+variable "redis_sku_name" {
+  description = "Azure Managed Redis SKU (for example Balanced_B0)."
+  type        = string
+  default     = "Balanced_B0"
 }
 
 variable "web_min_replicas" {

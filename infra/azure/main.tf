@@ -24,7 +24,7 @@ locals {
   web_fqdn = "${local.web_name}.${azurerm_container_app_environment.main.default_domain}"
 
   database_url = "postgresql://${azurerm_postgresql_flexible_server.main.administrator_login}:${urlencode(random_password.postgres.result)}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.main.name}?schema=public&sslmode=require"
-  redis_url    = "rediss://:${urlencode(azurerm_redis_cache.main.primary_access_key)}@${azurerm_redis_cache.main.hostname}:6380"
+  redis_url    = "rediss://:${urlencode(azurerm_managed_redis.main.default_database[0].primary_access_key)}@${azurerm_managed_redis.main.hostname}:${azurerm_managed_redis.main.default_database[0].port}"
 }
 
 resource "random_id" "suffix" {
@@ -71,6 +71,13 @@ resource "azurerm_postgresql_flexible_server" "main" {
   # Link and remove the Azure-services firewall rule below.
   public_network_access_enabled = true
 
+  # Azure assigns an availability zone when none is requested. Leaving `zone`
+  # unset in configuration and ignoring drift keeps this portable across
+  # regions instead of pinning a zone that may not exist elsewhere.
+  lifecycle {
+    ignore_changes = [zone]
+  }
+
   tags = local.tags
 }
 
@@ -88,19 +95,23 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "azure_services" {
   end_ip_address   = "0.0.0.0"
 }
 
-resource "azurerm_redis_cache" "main" {
-  name                          = "${local.prefix}-redis"
-  location                      = azurerm_resource_group.main.location
-  resource_group_name           = azurerm_resource_group.main.name
-  capacity                      = var.redis_capacity
-  family                        = "C"
-  sku_name                      = "Basic"
-  non_ssl_port_enabled          = false
-  minimum_tls_version           = "1.2"
-  public_network_access_enabled = true
+# Azure Cache for Redis is retired for new deployments; Azure Managed Redis is
+# its successor. The queue is deliberately ephemeral (PostgreSQL is the source
+# of truth), so the entry-level Balanced_B0 SKU is enough for this workload.
+resource "azurerm_managed_redis" "main" {
+  name                = "${local.prefix}-redis"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  sku_name            = var.redis_sku_name
 
-  redis_configuration {
-    maxmemory_policy = "noeviction"
+  high_availability_enabled = false
+  public_network_access     = "Enabled"
+
+  default_database {
+    access_keys_authentication_enabled = true
+    client_protocol                    = "Encrypted"
+    eviction_policy                    = "NoEviction"
+    clustering_policy                  = "NoCluster"
   }
 
   tags = local.tags
@@ -120,6 +131,14 @@ resource "azurerm_container_app" "api" {
   resource_group_name          = azurerm_resource_group.main.name
   revision_mode                = "Single"
   tags                         = local.tags
+
+  # CI/CD owns image rollouts. Without this, the bootstrap tag in
+  # terraform.tfvars would roll the app back on the next apply.
+  lifecycle {
+    ignore_changes = [
+      template[0].container[0].image,
+    ]
+  }
 
   secret {
     name  = "database-url"
@@ -217,6 +236,14 @@ resource "azurerm_container_app" "worker" {
   revision_mode                = "Single"
   tags                         = local.tags
 
+  # CI/CD owns image rollouts. Without this, the bootstrap tag in
+  # terraform.tfvars would roll the app back on the next apply.
+  lifecycle {
+    ignore_changes = [
+      template[0].container[0].image,
+    ]
+  }
+
   secret {
     name  = "database-url"
     value = local.database_url
@@ -286,6 +313,14 @@ resource "azurerm_container_app" "web" {
   resource_group_name          = azurerm_resource_group.main.name
   revision_mode                = "Single"
   tags                         = local.tags
+
+  # CI/CD owns image rollouts. Without this, the bootstrap tag in
+  # terraform.tfvars would roll the app back on the next apply.
+  lifecycle {
+    ignore_changes = [
+      template[0].container[0].image,
+    ]
+  }
 
   template {
     min_replicas = var.web_min_replicas

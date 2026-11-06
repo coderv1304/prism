@@ -300,7 +300,7 @@ Container App: web (external ingress :3000)
   ▼
 Container App: api (internal :4000)
   ├──────────────► PostgreSQL Flexible Server (private-ish public endpoint in demo)
-  └──────────────► Azure Cache for Redis (TLS 6380)
+  └──────────────► Azure Managed Redis (TLS, access key)
                           ▲
                           │ BullMQ
 Container App: worker (no ingress) ──► PostgreSQL

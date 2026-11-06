@@ -13,9 +13,9 @@ deterministic and designed to be safe to run anywhere.
 - **Local console:** `http://localhost:3000/console`
 - **Architecture map:** `http://localhost:3000/architecture`
 - **API docs (local):** `http://localhost:4000/api/docs`
-- **Public deployment:** provisioned by `infra/azure` + the gated release
-  workflow; set `PUBLIC_BASE_URL` after applying Terraform. No cloud credentials
-  were available in this workspace, so no public URL is claimed here.
+- **Public deployment:** <https://prism-prod-8ad8a0-web.delightfulcoast-e1bb1849.malaysiawest.azurecontainerapps.io>
+  (Azure Container Apps, `malaysiawest`) — provisioned with Terraform and
+  deployable through the gated release workflow.
 
 ![Prism landing page](docs/screenshots/landing.png)
 
@@ -66,7 +66,7 @@ would undermine the production-quality goal:
 - **Runtime:** Node 22 Alpine, Docker Buildx, multi-stage images, non-root users
 - **CI/CD:** GitHub Actions → GHCR → Azure Container Apps (OIDC, SHA tags, Trivy)
 - **Infrastructure:** Terraform (`azurerm` 4.x), Container Apps, PostgreSQL
-  Flexible Server, Azure Cache for Redis, Log Analytics
+  Flexible Server, Azure Managed Redis, Log Analytics
 
 ## Architecture
 
@@ -311,6 +311,21 @@ Then set the GitHub repository variables from the outputs and push to `main`.
 The deployment uses Container Apps revisions, so the previous revision remains
 available for an instant traffic rollback.
 
+### Live deployment
+
+| Item | Value |
+| --- | --- |
+| URL | <https://prism-prod-8ad8a0-web.delightfulcoast-e1bb1849.malaysiawest.azurecontainerapps.io> |
+| Region | `malaysiawest` (see [`docs/decisions.md`](docs/decisions.md) for why not `southeastasia`) |
+| Resource group | `prism-prod-8ad8a0-rg` |
+| Images | `ghcr.io/coderv1304/prism-{web,api,worker}:sha-287574f...` |
+| Migration | `prisma migrate deploy` applied before the smoke test |
+
+`GET /api/health` reports `database: up` and `redis: up`; the smoke test submits
+a real job and waits for the worker to persist the result. CI/CD authenticates
+with GitHub OIDC scoped to the resource group — no Azure credentials are stored
+in the repository.
+
 ## Observability and debugging
 
 - **Structured JSON logs** from API and worker, with request IDs and redaction.
@@ -363,8 +378,12 @@ docker compose exec redis redis-cli LLEN bull:prism-jobs:wait
 - Testimonials are fictional and labelled as such. Pricing is demo-only and no
   payment is collected.
 - There is no auth or tenant isolation. The console is a single shared demo.
-- Cloud deployment is code-complete but not provisioned: it needs an Azure
-  subscription and GitHub OIDC secrets. No public URL is fabricated.
+- The deployment runs on the cheapest sensible Azure SKUs (Burstable
+  PostgreSQL, Azure Managed Redis `Balanced_B0`, scale-to-one Container Apps).
+  It is a demo, not a funded production environment.
+- `southeastasia` is blocked by an inherited subscription policy, so the live
+  stack runs in `malaysiawest`; the trade-off is recorded in
+  [`docs/decisions.md`](docs/decisions.md).
 
 ## Three-minute walkthrough script
 
@@ -378,9 +397,9 @@ docker compose exec redis redis-cli LLEN bull:prism-jobs:wait
 4. **1:50–2:25** — Open `/architecture`, walk the BFF → API → Postgres/Redis →
    worker path, then show the release workflow: tests/builds gate deployment,
    SHA tags, path filters, OIDC and rollback.
-5. **2:25–2:55** — Open `infra/azure`, show Terraform resources and outputs.
-   Explain why no public URL is claimed without credentials, and how
-   `DEPLOY_ENABLED` + the smoke test complete the loop.
+5. **2:25–2:55** — Open the live URL and `/api/health`, then show
+   `infra/azure` outputs and the release workflow: OIDC-scoped deploy,
+   `DEPLOY_ENABLED`, migration step and the smoke test closing the loop.
 
 ## License
 

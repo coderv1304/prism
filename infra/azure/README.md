@@ -5,7 +5,7 @@ This stack provisions:
 - Azure Container Apps environment (consumption plan)
 - three Container Apps: public **web**, internal **API**, internal **worker**
 - PostgreSQL 16 Flexible Server + database
-- Azure Cache for Redis (TLS only, `noeviction`)
+- Azure Managed Redis (TLS only, access-key auth, `NoEviction`)
 - Log Analytics workspace for container logs
 
 The images are published to GitHub Container Registry (GHCR) by
@@ -14,10 +14,11 @@ registry prefix and immutable image tag.
 
 ## Cost note
 
-`B_Standard_B1ms` PostgreSQL, a Basic 1 GB Redis cache, one small web/API/worker
-replica and 30-day logs are deliberately the cheapest sensible combination.
-Azure Cache for Redis is still the largest fixed cost in this demo. Run
-`terraform destroy` when you are finished reviewing the deployment.
+`B_Standard_B1ms` PostgreSQL, an entry-level Azure Managed Redis (`Balanced_B0`)
+instance, one small web/API/worker replica and 30-day logs are deliberately the
+cheapest sensible combination. Azure Managed Redis is still the largest fixed
+cost in this demo. Run `terraform destroy` when you are finished reviewing the
+deployment.
 
 ## Region
 
@@ -138,30 +139,46 @@ secret rather than in Terraform state.
 
 ## 5. Migrations
 
-The API image can run Prisma migrations:
+Run migrations as a deliberate step, before the new API revision starts
+serving traffic. The release workflow does not apply migrations automatically:
+schema changes should be reviewed in the pull request.
+
+> **Note:** the Container Apps environment created by this stack is an *express*
+> environment, which does not support Container Apps Jobs. Use the
+> firewall-scoped method below for the first deployment and for schema changes.
 
 ```bash
-az containerapp job create \
-  --name prism-migrate \
-  --resource-group <rg> \
-  --environment <container-app-environment> \
-  --trigger-type Manual \
-  --image ghcr.io/<owner>/prism-api:<sha> \
-  --command "./node_modules/.bin/prisma" \
-  --args "migrate,deploy,--schema,apps/api/prisma/schema.prisma" \
-  --env-vars DATABASE_URL=secretref:database-url
+# 1. Read the connection string the API already uses (without printing it).
+DB_URL=$(az containerapp secret show \
+  --name <api-app> --resource-group <rg> \
+  --secret-name database-url --query value -o tsv)
+
+# 2. Allow the operator's public IP through the PostgreSQL firewall for the
+#    duration of the migration only.
+MYIP=$(curl -s https://api.ipify.org)
+az postgres flexible-server firewall-rule create \
+  --resource-group <rg> --server-name <pg-server> \
+  --name AllowLocalMigration \
+  --start-ip-address "$MYIP" --end-ip-address "$MYIP"
+
+# 3. Apply migrations from the repository.
+DATABASE_URL="$DB_URL" npx prisma migrate deploy \
+  --schema apps/api/prisma/schema.prisma
+
+# 4. Remove the temporary rule.
+az postgres flexible-server firewall-rule delete \
+  --resource-group <rg> --server-name <pg-server> \
+  --name AllowLocalMigration --yes
 ```
 
-For the first deployment, run the job before scaling the API revision. The
-GitHub Actions workflow does not run migrations automatically: schema changes
-should be reviewed and applied as a deliberate step. Document any migration in
-the pull request.
+The API image also ships the Prisma CLI and schema, so a Container Apps Job
+(`./node_modules/.bin/prisma migrate deploy ...`) works if the environment is
+switched from express to a standard/dedicated workload profile.
 
-Alternative without a Container Apps job: run the migration from a trusted
-network with the managed database connection string:
+Optionally seed the demo data after migrating:
 
 ```bash
-DATABASE_URL='postgresql://...' npm run db:deploy
+DATABASE_URL="$DB_URL" npm run db:seed -w @prism/api
 ```
 
 ## Rollback
