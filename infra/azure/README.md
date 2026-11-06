@@ -19,6 +19,21 @@ replica and 30-day logs are deliberately the cheapest sensible combination.
 Azure Cache for Redis is still the largest fixed cost in this demo. Run
 `terraform destroy` when you are finished reviewing the deployment.
 
+## Region
+
+This deployment targets **`malaysiawest`**. The subscription has an inherited
+Azure Policy assignment (`sys.regionrestriction`, "Allowed resource deployment
+regions") that limits deployments to `malaysiawest`, `uaenorth`,
+`indonesiacentral`, `koreacentral` and `eastasia`. A first-choice
+`southeastasia` (Singapore) deployment is rejected by that policy, so the stack
+uses `malaysiawest` — the closest allowed Southeast Asia region — rather than
+weakening a subscription-level governance control for a demo deployment.
+
+If Singapore is genuinely required, the supported route is a time-boxed policy
+exemption on the resource group (created by the subscription owner) or a
+change to the assignment's allowed-locations list. Both are governance
+changes, not Terraform changes. See `docs/decisions.md` for the full record.
+
 ## 1. Bootstrap the remote state (once)
 
 ```bash
