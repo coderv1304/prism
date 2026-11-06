@@ -225,6 +225,10 @@ npm run format
 - **Stalled-job recovery:** if the worker dies mid-job, BullMQ's stalled check
   re-delivers it after the lock expires. `maxStalledCount` bounds repeated
   crashes, after which the job is failed and can be retried by an operator.
+  Verified in this build: the worker was killed at 40% progress; after restart
+  the job was re-delivered as attempt 2 and completed with 11 persisted events.
+  Container Apps restarts replicas automatically; Compose needs
+  `docker compose start worker` after a manual `kill`.
 - **Postgres before Redis:** the API writes the job and first event before
   enqueueing. If Redis is unavailable, the row is failed loudly with an error
   event rather than left queued forever.
