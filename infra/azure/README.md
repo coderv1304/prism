@@ -100,6 +100,12 @@ Create a Microsoft Entra app registration for GitHub OIDC and federate it to
 this repository/environment. Grant it **Contributor** on the target resource
 group and, if the workflow creates a resource group, the subscription.
 
+GitHub may present either the legacy subject
+`repo:<owner>/<repo>:environment:production` or the immutable, ID-qualified
+form `repo:<owner>@<owner-id>/<repo>@<repo-id>:environment:production`. Add
+both federated credentials; the IDs are visible on the repository API or in a
+failed `azure/login` assertion.
+
 Repository **secrets**:
 
 | Secret                  | Value                                |

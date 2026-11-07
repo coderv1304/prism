@@ -40,7 +40,9 @@ one-line change to `location` in `terraform.tfvars` once the policy allows it.
 
 The release workflow authenticates to Azure with a federated credential
 (`repo:coderv1304/prism:environment:production`) instead of a stored service
-principal secret. The app registration is scoped to the deployment resource
+principal secret. GitHub also asserts the ID-qualified form
+(`repo:coderv1304@269889359/prism@1448252011:environment:production`), so both
+subjects are trusted. The app registration is scoped to the deployment resource
 group with `Contributor`, not subscription-wide, and only the `deploy` job gets
 `id-token: write`.
 
