@@ -10,6 +10,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
     "@prism/contracts": "*",
     "clsx": "^2.1.1",
     "next": "15.5.29",
