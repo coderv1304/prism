@@ -1,24 +1,14 @@
 import type { ReactNode } from "react";
-import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-export function Badge({
-  children,
-  className,
-  icon = true,
-}: {
-  children: ReactNode;
-  className?: string;
-  icon?: boolean;
-}) {
+export function Badge({ children, className }: { children: ReactNode; className?: string; icon?: boolean }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border border-violet/25 bg-violet/[0.09] px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-lilac",
+        "inline-flex items-center gap-2 border-l-2 border-rust pl-2.5 font-mono text-[10px] uppercase leading-5 tracking-[0.18em] text-current/70",
         className,
       )}
     >
-      {icon ? <Sparkles className="h-3.5 w-3.5 text-fuchsia" aria-hidden="true" /> : null}
       {children}
     </span>
   );

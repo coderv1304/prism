@@ -7,7 +7,7 @@ export function formatCompact(value: number): string {
 }
 
 export function formatDuration(milliseconds: number | null): string {
-  if (milliseconds === null || Number.isNaN(milliseconds)) return "—";
+  if (milliseconds === null || Number.isNaN(milliseconds)) return "n/a";
   if (milliseconds === 0) return "0ms";
   if (milliseconds < 1_000) return `${Math.max(1, Math.round(milliseconds))}ms`;
   if (milliseconds < 60_000) return `${(milliseconds / 1_000).toFixed(1)}s`;
@@ -17,9 +17,9 @@ export function formatDuration(milliseconds: number | null): string {
 }
 
 export function relativeTime(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "n/a";
   const timestamp = new Date(iso).getTime();
-  if (Number.isNaN(timestamp)) return "—";
+  if (Number.isNaN(timestamp)) return "n/a";
 
   const seconds = Math.max(0, Math.round((Date.now() - timestamp) / 1_000));
   if (seconds < 10) return "just now";

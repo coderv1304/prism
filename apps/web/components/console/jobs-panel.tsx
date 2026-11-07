@@ -1,12 +1,11 @@
 "use client";
 
-import { AlertCircle, ChevronRight, Inbox, Loader2, Pause, Play, RefreshCw, Sparkles } from "lucide-react";
 import type { JobDto, JobStatus } from "@prism/contracts";
 import { JOB_STATUSES } from "@prism/contracts";
 import { GlassCard } from "@/components/ui/glass-card";
 import { cn } from "@/lib/cn";
 import { formatDuration, relativeTime } from "@/lib/format";
-import { jobEmoji, jobLabel, statusMeta } from "./job-meta";
+import { jobCode, jobLabel, statusMeta } from "./job-meta";
 
 type Filter = JobStatus | "all";
 
@@ -17,70 +16,65 @@ const filters: Array<{ value: Filter; label: string }> = [
 
 function JobRow({ job, onSelect }: { job: JobDto; onSelect: (id: string) => void }) {
   const meta = statusMeta[job.status];
-  const StatusIcon = meta.icon;
 
   return (
     <button
       type="button"
       onClick={() => onSelect(job.id)}
-      className="group flex w-full items-center gap-3 border-b border-white/[0.05] px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-white/[0.03] sm:px-5"
+      className="flex w-full items-center gap-3 border-b border-paper/10 px-4 py-3 text-left last:border-b-0 hover:bg-paper/[0.03] sm:px-5"
     >
-      <span
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm"
-        aria-hidden="true"
-      >
-        {jobEmoji(job.type)}
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-paper/15 font-mono text-[9px] tracking-[0.08em] text-paper/45">
+        {jobCode(job.type)}
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2">
-          <span className="truncate text-[12.5px] font-medium text-white">{job.payload.label}</span>
-          <span className="hidden shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-mist/35 sm:inline">
+        <span className="flex items-baseline gap-2">
+          <span className="truncate text-[12.5px] text-paper/90">{job.payload.label}</span>
+          <span className="hidden shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-paper/30 sm:inline">
             {jobLabel(job.type)}
           </span>
         </span>
         <span className="mt-1.5 flex items-center gap-2.5">
-          <span className="progress-track h-1 w-full max-w-[180px]">
+          <span className="h-1 w-full max-w-[180px] bg-paper/10">
             <span
-              className={cn("progress-fill block h-full", job.status === "queued" && "opacity-50")}
+              className="block h-1"
               style={{
                 width: `${job.progress}%`,
-                background:
+                backgroundColor:
                   job.status === "failed"
-                    ? "linear-gradient(90deg,#fb7185,#f43f5e)"
+                    ? "#e0785c"
                     : job.status === "queued"
-                      ? "linear-gradient(90deg,#f59e0b,#fbbf24)"
-                      : undefined,
+                      ? "#e0ae4e"
+                      : "#8fc2a9",
               }}
             />
           </span>
-          <span className="shrink-0 font-mono text-[9px] tabular text-mist/40">
+          <span className="shrink-0 font-mono text-[9px] tabular text-paper/35">
             {job.status === "active" || job.status === "queued" ? `${job.progress}%` : formatDuration(job.durationMs)}
           </span>
         </span>
         {job.status === "failed" && job.error ? (
-          <span className="mt-1 flex items-center gap-1 text-[10px] text-rose-300/70">
-            <AlertCircle className="h-2.5 w-2.5 shrink-0" />
-            <span className="truncate">{job.error}</span>
-          </span>
+          <span className="mt-1 block truncate text-[10px] text-ember/75">{job.error}</span>
         ) : null}
       </span>
 
       <span
         className={cn(
-          "hidden shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] sm:flex",
+          "hidden shrink-0 items-center gap-1.5 border px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] sm:flex",
           meta.badge,
         )}
       >
-        <StatusIcon className={cn("h-2.5 w-2.5", job.status === "active" && "animate-spin")} />
+        <span className={cn("h-1 w-1", meta.dot)} aria-hidden="true" />
         {meta.label}
       </span>
 
-      <span className="hidden w-[62px] shrink-0 text-right font-mono text-[9.5px] text-mist/40 md:block">
+      <span className="hidden w-[62px] shrink-0 text-right font-mono text-[9.5px] text-paper/35 md:block">
         {relativeTime(job.createdAt)}
       </span>
 
-      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-mist/25 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-mist/60" />
+      <span className="shrink-0 font-mono text-[11px] text-paper/25" aria-hidden="true">
+        →
+      </span>
     </button>
   );
 }
@@ -110,19 +104,17 @@ export function JobsPanel({
 }) {
   return (
     <GlassCard className="overflow-hidden" interactive={false}>
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 pb-3 pt-6 sm:px-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 pb-3 pt-5 sm:px-5">
         <div>
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-white">
+          <h2 className="flex items-center gap-2 text-[15px] text-paper">
             Job activity
-            <span className="flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2 py-0.5 font-mono text-[8.5px] uppercase tracking-[0.1em] text-mist/50">
-              <span
-                className={cn("h-1.5 w-1.5 rounded-full", paused ? "bg-mist/40" : "animate-pulse bg-emerald-400")}
-              />
+            <span className="flex items-center gap-1.5 border border-paper/10 bg-paper/[0.03] px-2 py-0.5 font-mono text-[8.5px] uppercase tracking-[0.1em] text-paper/40">
+              <span className={cn("h-1 w-1", paused ? "bg-paper/30" : "bg-sage")} aria-hidden="true" />
               {paused ? "paused" : "live"}
             </span>
           </h2>
-          <p className="mt-1 text-[10.5px] text-mist/45">
-            {lastUpdated ? `Updated ${relativeTime(lastUpdated.toISOString())}` : "Waiting for the first sync…"}
+          <p className="mt-1 text-[10.5px] text-paper/35">
+            {lastUpdated ? `Updated ${relativeTime(lastUpdated.toISOString())}` : "Waiting for the first sync"}
           </p>
         </div>
 
@@ -130,25 +122,23 @@ export function JobsPanel({
           <button
             type="button"
             onClick={onTogglePaused}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-mist transition-colors hover:border-white/20 hover:text-white"
+            className="h-8 border border-paper/10 bg-paper/[0.03] px-2.5 font-mono text-[9px] uppercase tracking-[0.08em] text-paper/50 hover:border-paper/25 hover:text-paper"
             aria-label={paused ? "Resume auto-refresh" : "Pause auto-refresh"}
-            title={paused ? "Resume auto-refresh" : "Pause auto-refresh"}
           >
-            {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+            {paused ? "Resume" : "Pause"}
           </button>
           <button
             type="button"
             onClick={onRefresh}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-mist transition-colors hover:border-white/20 hover:text-white"
+            className="h-8 border border-paper/10 bg-paper/[0.03] px-2.5 font-mono text-[9px] uppercase tracking-[0.08em] text-paper/50 hover:border-paper/25 hover:text-paper"
             aria-label="Refresh now"
-            title="Refresh now"
           >
-            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+            Refresh
           </button>
         </div>
       </div>
 
-      <div className="no-scrollbar flex gap-1 overflow-x-auto border-y border-white/[0.06] bg-white/[0.015] px-3 py-2">
+      <div className="no-scrollbar flex gap-1 overflow-x-auto border-y border-paper/10 bg-paper/[0.015] px-3 py-2">
         {filters.map((entry) => (
           <button
             key={entry.value}
@@ -156,10 +146,10 @@ export function JobsPanel({
             onClick={() => onFilterChange(entry.value)}
             aria-pressed={filter === entry.value}
             className={cn(
-              "shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors",
+              "shrink-0 px-3 py-1.5 text-[11px]",
               filter === entry.value
-                ? "bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-                : "text-mist/60 hover:bg-white/[0.04] hover:text-white",
+                ? "bg-paper/10 text-paper"
+                : "text-paper/45 hover:bg-paper/[0.04] hover:text-paper/80",
             )}
           >
             {entry.label}
@@ -169,27 +159,25 @@ export function JobsPanel({
 
       <div className="min-h-[280px]">
         {loading && jobs.length === 0 ? (
-          <div className="divide-y divide-white/[0.05]">
+          <div className="divide-y divide-paper/10">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="flex animate-pulse items-center gap-3 px-5 py-4">
-                <div className="h-9 w-9 rounded-xl bg-white/[0.05]" />
+              <div key={index} className="flex items-center gap-3 px-5 py-4">
+                <div className="h-9 w-9 border border-paper/10 bg-paper/[0.03]" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-2.5 w-1/3 rounded bg-white/[0.06]" />
-                  <div className="h-1.5 w-2/3 rounded bg-white/[0.04]" />
+                  <div className="h-2.5 w-1/3 bg-paper/[0.06]" />
+                  <div className="h-1 w-2/3 bg-paper/[0.04]" />
                 </div>
-                <div className="h-5 w-16 rounded-full bg-white/[0.05]" />
+                <div className="h-5 w-16 border border-paper/10 bg-paper/[0.03]" />
               </div>
             ))}
           </div>
         ) : jobs.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03]">
-              <Inbox className="h-5 w-5 text-mist/40" />
-            </div>
-            <p className="mt-4 text-[13px] font-medium text-white/85">
+            <p className="font-display text-[44px] leading-none text-paper/15">00</p>
+            <p className="mt-4 text-[13px] text-paper/80">
               {filter === "all" ? "Nothing in the queue yet" : `No ${filter} jobs`}
             </p>
-            <p className="mt-1 max-w-[260px] text-[11px] leading-relaxed text-mist/50">
+            <p className="mt-1 max-w-[260px] text-[11px] leading-relaxed text-paper/40">
               {filter === "all"
                 ? "Dispatch your first job and watch it move from queued to completed."
                 : "Switch the filter, or send a new job from the composer."}
@@ -200,9 +188,8 @@ export function JobsPanel({
                 onFilterChange("all");
                 document.getElementById("composer")?.scrollIntoView({ behavior: "smooth", block: "center" });
               }}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-violet/25 bg-violet/10 px-3 py-1.5 text-[11px] text-lilac transition-colors hover:bg-violet/15 hover:text-white"
+              className="mt-4 border border-brass/30 bg-brass/10 px-3 py-1.5 text-[11px] text-brass hover:bg-brass/15"
             >
-              <Sparkles className="h-3 w-3" />
               Dispatch a job
             </button>
           </div>
@@ -215,20 +202,12 @@ export function JobsPanel({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] px-4 py-3 text-[10px] text-mist/40 sm:px-5">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-paper/10 px-4 py-3 text-[10px] text-paper/35 sm:px-5">
         <span>
           Showing {jobs.length} of {total} job{total === 1 ? "" : "s"}
         </span>
-        <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.08em]">
-          {paused ? (
-            <>
-              <Pause className="h-2.5 w-2.5" /> auto-refresh paused
-            </>
-          ) : (
-            <>
-              <Loader2 className="h-2.5 w-2.5 animate-spin" /> polling every 2.5s
-            </>
-          )}
+        <span className="font-mono text-[9px] uppercase tracking-[0.08em]">
+          {paused ? "auto-refresh paused" : "polling every 2.5s"}
         </span>
       </div>
     </GlassCard>

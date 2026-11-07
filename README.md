@@ -17,8 +17,6 @@ deterministic and designed to be safe to run anywhere.
   (Azure Container Apps, `malaysiawest`) — provisioned with Terraform and
   deployable through the gated release workflow.
 
-![Prism landing page](docs/screenshots/landing.png)
-
 ## What it demonstrates
 
 | Assessment requirement                 | Where it lives                                                           |
@@ -36,29 +34,9 @@ deterministic and designed to be safe to run anywhere.
 | Architecture diagram                   | `apps/web/public/architecture.svg`, `/architecture` page                 |
 | Documentation                          | this README, `ARCHITECTURE.md`, `infra/azure/README.md`, `SECURITY.md`   |
 
-## Design language
-
-The UI deliberately applies the requested aesthetic: purple gradients, Lucide
-icons, sparkles, three-card rows, bento grids, glass cards, glowing orbs, colour
-stripes, Geist/Inter typography, emoji headings, em dashes, three pricing tiers,
-dot-grid backgrounds and hover motion. It is also responsive, keyboard
-accessible and respects `prefers-reduced-motion`.
-
-Three items from the original visual brief were **not** shipped because they
-would undermine the production-quality goal:
-
-1. A tab labelled **“Vite + React”** — the app is Next.js 15/React 19, so a fake
-   framework label would be misleading.
-2. The **browser default favicon** — replaced with a custom Prism mark so the
-   product reads as real in a tab, bookmark or screenshot.
-3. **Lorem ipsum in the live app** — replaced with concrete product copy and
-   clearly labelled demo data. Fake testimonials and pricing are present because
-   they were explicitly requested, but both are visibly marked as fictional /
-   demo-only.
-
 ## Stack
 
-- **Web:** Next.js 15.5 (App Router), React 19, Tailwind CSS 4, Geist, Lucide
+- **Web:** Next.js 15.5 (App Router), React 19, Tailwind CSS 4
 - **API:** NestJS 11, Prisma 6, class-validator, Swagger, Pino, Helmet, throttling
 - **Queue:** BullMQ 5 on Redis 7, `noeviction`, AOF persistence in Compose
 - **Worker:** standalone Node process with graceful SIGTERM and a health server
@@ -348,19 +326,13 @@ docker compose exec postgres psql -U prism -d prism -c 'select id,status,progres
 docker compose exec redis redis-cli LLEN bull:prism-jobs:wait
 ```
 
-## Screenshots
-
-| Console                                      | Architecture                                       |
-| -------------------------------------------- | -------------------------------------------------- |
-| ![Job console](docs/screenshots/console.png) | ![Architecture](docs/screenshots/architecture.png) |
-
 ## Repository layout
 
 ```text
 .
 ├── apps
 │   ├── api        NestJS REST API, Prisma schema/migrations, tests
-│   ├── web        Next.js marketing site, console, BFF, architecture page
+│   ├── web        Next.js app, console, BFF, architecture page
 │   └── worker     BullMQ consumer, workloads, health server, tests
 ├── packages
 │   └── contracts  Shared types and job catalog
@@ -375,8 +347,6 @@ docker compose exec redis redis-cli LLEN bull:prism-jobs:wait
 
 - The workload is synthetic. The queue, persistence, retries, progress reporting
   and status API are real.
-- Testimonials are fictional and labelled as such. Pricing is demo-only and no
-  payment is collected.
 - There is no auth or tenant isolation. The console is a single shared demo.
 - The deployment runs on the cheapest sensible Azure SKUs (Burstable
   PostgreSQL, Azure Managed Redis `Balanced_B0`, scale-to-one Container Apps).
@@ -387,8 +357,8 @@ docker compose exec redis redis-cli LLEN bull:prism-jobs:wait
 
 ## Three-minute walkthrough script
 
-1. **0:00–0:30** — Open `/`, scroll the bento and architecture CTA. Call out the
-   design system and the one-command stack.
+1. **0:00–0:30** — Open `/`, scroll the system principles and the request path.
+   Call out the one-command stack.
 2. **0:30–1:15** — Open `/console`, show health, stats, dispatch an
    `insight-report`, then open the drawer while it runs. Point out live stages,
    event timeline and the persisted result.

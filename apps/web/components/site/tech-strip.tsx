@@ -1,27 +1,29 @@
-import { Container, Database, Layers, Server, Triangle, Workflow } from "lucide-react";
-
 const stack = [
-  { label: "Next.js 15", icon: Triangle },
-  { label: "NestJS 11", icon: Server },
-  { label: "PostgreSQL 16", icon: Database },
-  { label: "Redis 7", icon: Layers },
-  { label: "BullMQ", icon: Workflow },
-  { label: "Docker", icon: Container },
+  "Next.js 15",
+  "NestJS 11",
+  "PostgreSQL 16",
+  "Azure Managed Redis",
+  "BullMQ 5",
+  "Docker",
+  "Azure Container Apps",
+  "GitHub Actions",
 ] as const;
 
 export function TechStrip() {
   return (
-    <section aria-label="Technology stack" className="relative border-y border-white/[0.06] bg-white/[0.012]">
-      <div className="shell flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-mist/45">Runs on the boring stack</p>
-        <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
-          {stack.map((item) => (
-            <div key={item.label} className="flex items-center gap-2 text-mist/70">
-              <item.icon className="h-3.5 w-3.5 text-lilac/70" aria-hidden="true" />
-              <span className="text-[12px]">{item.label}</span>
-            </div>
+    <section aria-label="Technology stack" className="border-b border-ink/15 bg-paper-2">
+      <div className="shell flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+        <p className="label shrink-0 text-umber">Runs on</p>
+        <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          {stack.map((item, index) => (
+            <li key={item} className="flex items-center gap-5">
+              <span className="text-[12px] text-ink/75">{item}</span>
+              {index < stack.length - 1 ? (
+                <span className="h-3 w-px bg-ink/15" aria-hidden="true" />
+              ) : null}
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );

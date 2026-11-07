@@ -1,19 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#100A22"/>
-      <stop offset="1" stop-color="#05040B"/>
-    </linearGradient>
-    <linearGradient id="beam" x1="12" y1="50" x2="52" y2="14" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#8B5CF6"/>
-      <stop offset="0.5" stop-color="#D946EF"/>
-      <stop offset="1" stop-color="#22D3EE"/>
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="15" fill="url(#bg)"/>
-  <rect x="0.5" y="0.5" width="63" height="63" rx="14.5" fill="none" stroke="#C4B5FD" stroke-opacity="0.22"/>
-  <path d="M32 12L51 48H13L32 12Z" fill="url(#beam)" fill-opacity="0.14" stroke="url(#beam)" stroke-width="2.2" stroke-linejoin="round"/>
-  <path d="M32 20L37.5 30.5" stroke="#E9D5FF" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M24 44H40" stroke="url(#beam)" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M48 15.5L49 18.5L52 19.5L49 20.5L48 23.5L47 20.5L44 19.5L47 18.5L48 15.5Z" fill="#F0ABFC"/>
+  <rect width="64" height="64" rx="12" fill="#f4edde"/>
+  <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="11.25" fill="none" stroke="#15120e" stroke-opacity="0.28" stroke-width="1.5"/>
+  <path d="M32 12 52 50H12L32 12Z" fill="#a8402a" fill-opacity="0.14" stroke="#15120e" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M32 12v38" stroke="#15120e" stroke-width="1.6"/>
+  <path d="M19 41h26" stroke="#15120e" stroke-width="1.6"/>
+  <path d="M32 12 19 41" stroke="#1f5945" stroke-width="1.6"/>
 </svg>

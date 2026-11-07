@@ -1,7 +1,6 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { ArrowUpRight, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { JOB_CATALOG, type JobDto, type JobType } from "@prism/contracts";
 import { api, ApiError } from "@/lib/api";
@@ -39,7 +38,7 @@ export function JobComposer({ onCreated }: { onCreated: (job: JobDto) => void })
         payload: { label: label.trim(), records },
       });
       toast.success("Job queued", {
-        description: `${definition.label} · ${formatNumber(records)} records — watch the timeline.`,
+        description: `${definition.label} · ${formatNumber(records)} records. Watch the timeline.`,
       });
       onCreated(job);
       setLabel("");
@@ -52,25 +51,22 @@ export function JobComposer({ onCreated }: { onCreated: (job: JobDto) => void })
   }
 
   return (
-    <GlassCard className="p-5 pt-6" interactive={false} id="composer">
-      <div className="flex items-start justify-between gap-3">
+    <GlassCard className="p-5" interactive={false} id="composer">
+      <div className="flex items-start justify-between gap-3 border-b border-paper/15 pb-4">
         <div>
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-white">
-            Dispatch a job
-            <Sparkles className="h-3.5 w-3.5 text-fuchsia" />
-          </h2>
-          <p className="mt-1 text-[11.5px] text-mist/60">POST /api/v1/jobs — validated, queued, observable.</p>
+          <h2 className="text-[16px] text-paper">Dispatch a job</h2>
+          <p className="mt-1 font-mono text-[10px] text-paper/40">POST /api/v1/jobs</p>
         </div>
-        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 font-mono text-[8.5px] uppercase tracking-[0.12em] text-mist/50">
+        <span className="border border-paper/15 bg-paper/[0.04] px-2 py-1 font-mono text-[8.5px] uppercase tracking-[0.12em] text-paper/45">
           async
         </span>
       </div>
 
       <form className="mt-5 space-y-5" onSubmit={handleSubmit}>
-        <fieldset>
-          <legend className="mb-2 font-mono text-[9px] uppercase tracking-[0.16em] text-mist/45">Job type</legend>
-          <div className="space-y-2">
-            {JOB_CATALOG.map((entry) => {
+        <fieldset className="min-w-0">
+          <legend className="mb-2 font-mono text-[9px] uppercase tracking-[0.16em] text-paper/40">Job type</legend>
+          <div className="space-y-1.5">
+            {JOB_CATALOG.map((entry, index) => {
               const selected = entry.type === type;
               return (
                 <button
@@ -79,31 +75,28 @@ export function JobComposer({ onCreated }: { onCreated: (job: JobDto) => void })
                   aria-pressed={selected}
                   onClick={() => selectType(entry.type)}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all duration-300",
+                    "flex w-full items-baseline gap-3 border px-3 py-2.5 text-left",
                     selected
-                      ? "border-violet/40 bg-violet/[0.09] shadow-[0_0_0_1px_rgba(167,139,250,0.1)_inset]"
-                      : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]",
+                      ? "border-brass/50 bg-brass/[0.08]"
+                      : "border-paper/10 bg-paper/[0.02] hover:border-paper/25",
                   )}
                 >
-                  <span
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] text-sm"
-                    aria-hidden="true"
-                  >
-                    {entry.emoji}
+                  <span className={cn("font-mono text-[9px]", selected ? "text-brass" : "text-paper/30")}>
+                    {String(index + 1).padStart(2, "0")}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[12px] font-medium text-white">{entry.label}</span>
-                    <span className="mt-0.5 block truncate text-[10.5px] text-mist/55">{entry.blurb}</span>
+                    <span className={cn("block text-[12px]", selected ? "text-paper" : "text-paper/75")}>
+                      {entry.label}
+                    </span>
+                    <span className="mt-0.5 block truncate text-[10.5px] text-paper/35">{entry.blurb}</span>
                   </span>
                   <span
                     className={cn(
-                      "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border",
-                      selected ? "border-fuchsia bg-fuchsia" : "border-white/20",
+                      "h-2 w-2 shrink-0",
+                      selected ? "bg-brass" : "border border-paper/25",
                     )}
                     aria-hidden="true"
-                  >
-                    {selected ? <span className="h-1.5 w-1.5 rounded-full bg-white" /> : null}
-                  </span>
+                  />
                 </button>
               );
             })}
@@ -113,10 +106,10 @@ export function JobComposer({ onCreated }: { onCreated: (job: JobDto) => void })
         <div>
           <label
             htmlFor={labelId}
-            className="mb-1.5 flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.16em] text-mist/45"
+            className="mb-1.5 flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.16em] text-paper/40"
           >
             <span>Job label</span>
-            <span className="text-mist/30">{label.trim().length}/80</span>
+            <span className="text-paper/25">{label.trim().length}/80</span>
           </label>
           <input
             id={labelId}
@@ -124,16 +117,16 @@ export function JobComposer({ onCreated }: { onCreated: (job: JobDto) => void })
             onChange={(event) => setLabel(event.target.value)}
             maxLength={80}
             placeholder="e.g. Friday revenue pulse"
-            className="h-10 w-full rounded-xl border border-white/[0.08] bg-[#070511]/80 px-3 text-[12px] text-white placeholder:text-mist/30 transition-colors focus:border-violet/50 focus:outline-none"
+            className="h-10 w-full border border-paper/15 bg-ink-soft px-3 text-[12px] text-paper placeholder:text-paper/25 focus:border-brass/60 focus:outline-none"
           />
         </div>
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <label htmlFor={recordsId} className="font-mono text-[9px] uppercase tracking-[0.16em] text-mist/45">
+            <label htmlFor={recordsId} className="font-mono text-[9px] uppercase tracking-[0.16em] text-paper/40">
               Record count
             </label>
-            <span className="font-mono text-[11px] text-lilac">{formatNumber(records)}</span>
+            <span className="font-mono text-[11px] text-brass">{formatNumber(records)}</span>
           </div>
           <input
             id={recordsId}
@@ -152,10 +145,10 @@ export function JobComposer({ onCreated }: { onCreated: (job: JobDto) => void })
                 type="button"
                 onClick={() => setRecords(preset)}
                 className={cn(
-                  "flex-1 rounded-md border px-1.5 py-1 font-mono text-[9px] transition-colors",
+                  "flex-1 border px-1.5 py-1 font-mono text-[9px]",
                   records === preset
-                    ? "border-violet/40 bg-violet/15 text-white"
-                    : "border-white/[0.06] bg-white/[0.02] text-mist/50 hover:text-white",
+                    ? "border-brass/50 bg-brass/15 text-paper"
+                    : "border-paper/10 bg-paper/[0.02] text-paper/45 hover:text-paper",
                 )}
               >
                 {preset / 1000}k
@@ -167,25 +160,26 @@ export function JobComposer({ onCreated }: { onCreated: (job: JobDto) => void })
         <button
           type="submit"
           disabled={disabled}
-          className="group flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[linear-gradient(100deg,#8b5cf6,#c026d3_55%,#d946ef)] text-[13px] font-medium text-white shadow-[0_12px_36px_-14px_rgba(168,85,247,0.9)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:brightness-100"
+          className="flex h-11 w-full items-center justify-center gap-2 border border-brass bg-brass text-[13px] font-medium text-ink hover:border-paper hover:bg-paper disabled:cursor-not-allowed disabled:opacity-40"
         >
           {submitting ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Queueing…
+              <span className="h-3.5 w-3.5 animate-spin border border-ink/30 border-t-ink" aria-hidden="true" />
+              Queueing
             </>
           ) : (
             <>
               Queue job
-              <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+              <span aria-hidden="true" className="text-[15px] leading-none">
+                →
+              </span>
             </>
           )}
         </button>
       </form>
 
-      <p className="mt-4 flex items-start gap-2 text-[10px] leading-relaxed text-mist/40">
-        <span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-fuchsia/60" />
-        Runs the real pipeline — validation, Postgres write, Redis queue, worker stages, persisted result.
+      <p className="mt-4 border-t border-paper/10 pt-3 text-[10px] leading-relaxed text-paper/35">
+        This runs the real pipeline: validation, PostgreSQL write, Redis queue, worker stages and a persisted result.
       </p>
     </GlassCard>
   );

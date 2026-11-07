@@ -1,14 +1,13 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import { Wordmark } from "@/components/ui/logo";
 
 const columns = [
   {
     title: "Product",
     links: [
-      { label: "Overview", href: "/#product" },
-      { label: "How it works", href: "/#how-it-works" },
-      { label: "Pricing", href: "/#pricing" },
+      { label: "System", href: "/#product" },
+      { label: "Request path", href: "/#how-it-works" },
+      { label: "Access", href: "/#access" },
       { label: "Live console", href: "/console" },
     ],
   },
@@ -22,11 +21,11 @@ const columns = [
     ],
   },
   {
-    title: "Resources",
+    title: "Evidence",
     links: [
-      { label: "FAQ", href: "/#faq" },
       { label: "Health endpoint", href: "/api/health" },
-      { label: "Queue stats", href: "/api/v1/queue/stats" },
+      { label: "Queue statistics", href: "/api/v1/queue/stats" },
+      { label: "FAQ", href: "/#faq" },
       { label: "Back to top", href: "/#top" },
     ],
   },
@@ -34,36 +33,29 @@ const columns = [
 
 export function SiteFooter() {
   return (
-    <footer className="relative border-t border-white/[0.07] bg-[#04030a]">
+    <footer className="border-t border-ink/15 bg-paper-2">
       <div className="shell py-14 sm:py-16">
-        <div className="grid gap-12 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
+        <div className="grid gap-12 lg:grid-cols-[1.5fr_repeat(3,1fr)]">
           <div className="max-w-sm">
             <Wordmark />
-            <p className="mt-5 text-sm leading-relaxed text-mist">
-              Async job infrastructure for teams that would rather ship features than babysit queues. Queue it, retry
-              it, watch it finish — with PostgreSQL holding the receipts.
+            <p className="mt-6 text-[13px] leading-6 text-umber">
+              Async job infrastructure for teams that would rather ship features than nurse a queue. Redis carries the
+              work; PostgreSQL keeps the record.
             </p>
-            <div className="mt-6 flex items-center gap-2 text-[12px] text-mist/80">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-              </span>
-              Demo environment · all services monitored
-            </div>
+            <p className="mt-6 flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.16em] text-umber">
+              <span className="h-1.5 w-1.5 bg-forest" aria-hidden="true" />
+              Deployed in malaysiawest
+            </p>
           </div>
 
           {columns.map((column) => (
             <div key={column.title}>
-              <h3 className="font-mono text-[10px] uppercase tracking-[0.22em] text-mist/60">{column.title}</h3>
+              <h3 className="font-mono text-[9px] uppercase tracking-[0.2em] text-umber">{column.title}</h3>
               <ul className="mt-4 space-y-2.5">
                 {column.links.map((link) => (
                   <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className="group inline-flex items-center gap-1 text-[13px] text-mist transition-colors hover:text-white"
-                    >
+                    <Link href={link.href} className="text-[12.5px] text-ink/75 hover:text-rust">
                       {link.label}
-                      <ArrowUpRight className="h-3 w-3 opacity-0 transition-all group-hover:opacity-60" />
                     </Link>
                   </li>
                 ))}
@@ -72,11 +64,9 @@ export function SiteFooter() {
           ))}
         </div>
 
-        <div className="mt-14 flex flex-col items-start justify-between gap-4 border-t border-white/[0.07] pt-6 text-[11px] text-mist/60 sm:flex-row sm:items-center">
-          <p>© {new Date().getFullYear()} Prism Labs. A demo build for the VEGAH DevOps &amp; Cloud assessment.</p>
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em]">
-            Next.js · NestJS · PostgreSQL · Redis · BullMQ
-          </p>
+        <div className="mt-14 flex flex-col items-start justify-between gap-3 border-t border-ink/15 pt-5 font-mono text-[9px] uppercase tracking-[0.14em] text-umber sm:flex-row sm:items-center">
+          <p>© {new Date().getFullYear()} Prism Labs · VEGAH DevOps &amp; Cloud assessment</p>
+          <p>Set in Fraunces and Manrope · Next.js · NestJS · PostgreSQL · Redis</p>
         </div>
       </div>
     </footer>

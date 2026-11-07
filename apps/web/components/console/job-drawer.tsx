@@ -1,13 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, CalendarClock, Check, Copy, FileJson, Hash, Loader2, RotateCcw, Timer, X } from "lucide-react";
 import { toast } from "sonner";
 import type { JobDto } from "@prism/contracts";
 import { api, ApiError } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { clockTime, formatDuration, formatNumber, relativeTime } from "@/lib/format";
-import { jobEmoji, jobLabel, statusMeta } from "./job-meta";
+import { jobCode, jobLabel, statusMeta } from "./job-meta";
 
 export function JobDrawer({
   jobId,
@@ -43,7 +42,6 @@ export function JobDrawer({
         setError(null);
         setLoading(false);
 
-        // Only keep polling while the job can still change.
         if (next.status === "queued" || next.status === "active") {
           timer = setTimeout(tick, 2_000);
         }
@@ -109,131 +107,117 @@ export function JobDrawer({
   if (!jobId) return null;
 
   const meta = job ? statusMeta[job.status] : null;
-  const StatusIcon = meta?.icon;
 
   return (
     <div className="fixed inset-0 z-[60]">
-      <div className="absolute inset-0 bg-black/65 backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-ink/80" onClick={onClose} aria-hidden="true" />
 
       <aside
         role="dialog"
         aria-modal="true"
         aria-labelledby="job-drawer-title"
-        className="animate-slide-in absolute inset-y-0 right-0 flex w-full max-w-[540px] flex-col border-l border-white/[0.1] bg-[#070511]/95 shadow-[-40px_0_120px_-40px_rgba(0,0,0,0.9)]"
+        className="animate-slide-in absolute inset-y-0 right-0 flex w-full max-w-[540px] flex-col border-l border-paper/15 bg-ink-soft text-paper"
       >
-        <div className="stripe absolute inset-x-0 top-0 z-10" />
-
-        <div className="flex items-start justify-between gap-4 border-b border-white/[0.07] px-5 pb-4 pt-6">
+        <div className="flex items-start justify-between gap-4 border-b border-paper/15 px-5 pb-4 pt-6">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-base" aria-hidden="true">
-                {job ? jobEmoji(job.type) : "✦"}
+              <span className="flex h-6 w-6 items-center justify-center border border-paper/15 font-mono text-[8px] text-paper/50">
+                {job ? jobCode(job.type) : "--"}
               </span>
-              <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-mist/45">
+              <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-paper/40">
                 {job ? jobLabel(job.type) : "Job detail"}
               </span>
             </div>
-            <h2 id="job-drawer-title" className="mt-2 truncate text-[17px] font-semibold text-white">
-              {job?.payload.label ?? "Loading job…"}
+            <h2 id="job-drawer-title" className="mt-3 truncate font-display text-[20px] text-paper">
+              {job?.payload.label ?? "Loading job"}
             </h2>
-            {job ? <p className="mt-1 truncate font-mono text-[9.5px] text-mist/40">{job.id}</p> : null}
+            {job ? <p className="mt-1 truncate font-mono text-[9.5px] text-paper/30">{job.id}</p> : null}
           </div>
           <button
             ref={closeRef}
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-mist transition-colors hover:border-white/20 hover:text-white"
+            className="h-8 shrink-0 border border-paper/15 bg-paper/[0.04] px-2.5 font-mono text-[9px] uppercase tracking-[0.1em] text-paper/60 hover:border-paper/35 hover:text-paper"
             aria-label="Close job details"
           >
-            <X className="h-4 w-4" />
+            Close
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
           {loading && !job ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-              <Loader2 className="h-5 w-5 animate-spin text-lilac" />
-              <p className="mt-3 text-[12px] text-mist/60">Fetching the job timeline…</p>
+              <span className="h-4 w-4 animate-spin border border-paper/25 border-t-brass" aria-hidden="true" />
+              <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.12em] text-paper/45">
+                Fetching the job timeline
+              </p>
             </div>
           ) : error && !job ? (
-            <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.06] p-4">
-              <div className="flex items-center gap-2 text-[12px] font-medium text-rose-200">
-                <AlertTriangle className="h-4 w-4" />
-                Could not load job
-              </div>
-              <p className="mt-1.5 text-[11.5px] text-rose-200/60">{error}</p>
+            <div className="border border-ember/30 bg-ember/[0.06] p-4">
+              <p className="text-[12px] font-medium text-ember">Could not load job</p>
+              <p className="mt-1.5 text-[11.5px] text-paper/50">{error}</p>
               <button
                 type="button"
                 onClick={() => setReloadKey((key) => key + 1)}
-                className="mt-3 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white"
+                className="mt-3 border border-paper/15 bg-paper/[0.04] px-3 py-1.5 text-[11px] text-paper"
               >
                 Try again
               </button>
             </div>
-          ) : job && meta && StatusIcon ? (
+          ) : job && meta ? (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+              <div className="border border-paper/15 bg-paper/[0.025] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <span
                     className={cn(
-                      "flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em]",
+                      "flex items-center gap-1.5 border px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em]",
                       meta.badge,
                     )}
                   >
-                    <StatusIcon className={cn("h-3 w-3", job.status === "active" && "animate-spin")} />
+                    <span className={cn("h-1 w-1", meta.dot)} aria-hidden="true" />
                     {meta.label}
                   </span>
-                  <span className="font-mono text-[11px] tabular text-mist/60">{job.progress}%</span>
+                  <span className="font-mono text-[11px] tabular text-paper/50">{job.progress}%</span>
                 </div>
-                <div className="progress-track mt-3">
+                <div className="mt-3 h-1 bg-paper/10">
                   <div
-                    className="progress-fill"
+                    className="h-1"
                     style={{
                       width: `${job.progress}%`,
-                      background:
-                        job.status === "failed"
-                          ? "linear-gradient(90deg,#fb7185,#f43f5e)"
-                          : job.status === "queued"
-                            ? "linear-gradient(90deg,#f59e0b,#fbbf24)"
-                            : undefined,
+                      backgroundColor:
+                        job.status === "failed" ? "#e0785c" : job.status === "queued" ? "#e0ae4e" : "#8fc2a9",
                     }}
                   />
                 </div>
-                <p className="mt-3 text-[11px] text-mist/55">
+                <p className="mt-3 text-[11px] leading-5 text-paper/45">
                   {job.status === "queued"
-                    ? "Waiting for a free worker slot — retries and ordering are managed by BullMQ."
+                    ? "Waiting for a free worker slot. Retries and ordering are managed by BullMQ."
                     : job.status === "active"
                       ? "A worker is on it. Progress is written to PostgreSQL at every stage."
                       : job.status === "completed"
-                        ? `Finished in ${formatDuration(job.durationMs)} — result persisted to PostgreSQL.`
+                        ? `Finished in ${formatDuration(job.durationMs)}. The result is persisted to PostgreSQL.`
                         : `Failed after ${job.attempts} attempt${job.attempts === 1 ? "" : "s"}. Review the error, then retry.`}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 {[
-                  { label: "Attempts", value: String(job.attempts), icon: Hash },
-                  { label: "Duration", value: formatDuration(job.durationMs), icon: Timer },
-                  { label: "Records", value: formatNumber(job.payload.records), icon: FileJson },
-                  { label: "Created", value: relativeTime(job.createdAt), icon: CalendarClock },
+                  { label: "Attempts", value: String(job.attempts) },
+                  { label: "Duration", value: formatDuration(job.durationMs) },
+                  { label: "Records", value: formatNumber(job.payload.records) },
+                  { label: "Created", value: relativeTime(job.createdAt) },
                 ].map((item) => (
-                  <div key={item.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                    <div className="flex items-center gap-1.5 font-mono text-[8.5px] uppercase tracking-[0.12em] text-mist/40">
-                      <item.icon className="h-3 w-3" />
-                      {item.label}
-                    </div>
-                    <p className="mt-1.5 font-mono text-[12px] text-white/85">{item.value}</p>
+                  <div key={item.label} className="border border-paper/10 bg-paper/[0.02] p-3">
+                    <p className="font-mono text-[8.5px] uppercase tracking-[0.12em] text-paper/35">{item.label}</p>
+                    <p className="mt-1.5 font-mono text-[12px] text-paper/80">{item.value}</p>
                   </div>
                 ))}
               </div>
 
               {job.error ? (
-                <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.06] p-4">
-                  <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.12em] text-rose-200/80">
-                    <AlertTriangle className="h-3 w-3" />
-                    Last error
-                  </div>
-                  <p className="mt-2 break-words font-mono text-[10.5px] leading-relaxed text-rose-100/70">
+                <div className="border border-ember/30 bg-ember/[0.06] p-4">
+                  <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-ember/85">Last error</p>
+                  <p className="mt-2 break-words font-mono text-[10.5px] leading-relaxed text-paper/65">
                     {job.error}
                   </p>
                 </div>
@@ -241,27 +225,27 @@ export function JobDrawer({
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-mono text-[9px] uppercase tracking-[0.16em] text-mist/45">Timeline</h3>
-                  <span className="font-mono text-[9px] text-mist/30">{job.events?.length ?? 0} events</span>
+                  <h3 className="font-mono text-[9px] uppercase tracking-[0.16em] text-paper/40">Timeline</h3>
+                  <span className="font-mono text-[9px] text-paper/25">{job.events?.length ?? 0} events</span>
                 </div>
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4">
+                <div className="border border-paper/10 bg-paper/[0.015] p-4">
                   {job.events && job.events.length > 0 ? (
                     <ol className="relative space-y-4">
-                      <span aria-hidden="true" className="absolute bottom-2 left-[3.5px] top-2 w-px bg-white/[0.07]" />
+                      <span aria-hidden="true" className="absolute bottom-2 left-[3.5px] top-2 w-px bg-paper/10" />
                       {job.events.map((event) => (
                         <li key={event.id} className="relative flex gap-3">
                           <span
                             className={cn(
-                              "relative z-10 mt-1 h-2 w-2 shrink-0 rounded-full ring-4 ring-[#0a0814]",
-                              event.kind === "error" && "bg-rose-400",
-                              event.kind === "warning" && "bg-amber",
-                              event.kind === "progress" && "bg-fuchsia/70",
-                              event.kind === "lifecycle" && "bg-violet",
+                              "relative z-10 mt-1 h-2 w-2 shrink-0",
+                              event.kind === "error" && "bg-ember",
+                              event.kind === "warning" && "bg-brass",
+                              event.kind === "progress" && "bg-sage/70",
+                              event.kind === "lifecycle" && "bg-paper/50",
                             )}
                           />
                           <div className="min-w-0 flex-1">
-                            <p className="text-[11.5px] leading-snug text-white/80">{event.message}</p>
-                            <p className="mt-1 font-mono text-[8.5px] uppercase tracking-[0.08em] text-mist/35">
+                            <p className="text-[11.5px] leading-snug text-paper/75">{event.message}</p>
+                            <p className="mt-1 font-mono text-[8.5px] uppercase tracking-[0.08em] text-paper/30">
                               {clockTime(event.createdAt)} · {relativeTime(event.createdAt)}
                             </p>
                           </div>
@@ -269,35 +253,34 @@ export function JobDrawer({
                       ))}
                     </ol>
                   ) : (
-                    <p className="text-[11px] text-mist/40">No events recorded yet.</p>
+                    <p className="text-[11px] text-paper/35">No events recorded yet.</p>
                   )}
                 </div>
               </div>
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-mono text-[9px] uppercase tracking-[0.16em] text-mist/45">Result</h3>
+                  <h3 className="font-mono text-[9px] uppercase tracking-[0.16em] text-paper/40">Result</h3>
                   {job.result ? (
                     <button
                       type="button"
                       onClick={copyResult}
-                      className="flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-1 font-mono text-[9px] text-mist/60 transition-colors hover:text-white"
+                      className="border border-paper/10 bg-paper/[0.03] px-2 py-1 font-mono text-[9px] text-paper/50 hover:border-paper/30 hover:text-paper"
                     >
-                      {copied ? <Check className="h-2.5 w-2.5 text-emerald-300" /> : <Copy className="h-2.5 w-2.5" />}
-                      {copied ? "copied" : "copy json"}
+                      {copied ? "Copied" : "Copy JSON"}
                     </button>
                   ) : null}
                 </div>
-                <pre className="max-h-[220px] overflow-auto rounded-2xl border border-white/[0.06] bg-[#05040c] p-4 font-mono text-[10.5px] leading-relaxed text-emerald-200/80">
+                <pre className="max-h-[220px] overflow-auto border border-paper/10 bg-[#100d0a] p-4 font-mono text-[10.5px] leading-relaxed text-sage/80">
                   {job.result
                     ? JSON.stringify(job.result, null, 2)
-                    : "// pending — the worker will persist the result here"}
+                    : "// pending - the worker will persist the result here"}
                 </pre>
               </div>
 
               <div>
-                <h3 className="mb-2 font-mono text-[9px] uppercase tracking-[0.16em] text-mist/45">Payload</h3>
-                <pre className="overflow-auto rounded-2xl border border-white/[0.06] bg-[#05040c] p-4 font-mono text-[10.5px] leading-relaxed text-mist/70">
+                <h3 className="mb-2 font-mono text-[9px] uppercase tracking-[0.16em] text-paper/40">Payload</h3>
+                <pre className="overflow-auto border border-paper/10 bg-[#100d0a] p-4 font-mono text-[10.5px] leading-relaxed text-paper/60">
                   {JSON.stringify(job.payload, null, 2)}
                 </pre>
               </div>
@@ -305,8 +288,8 @@ export function JobDrawer({
           ) : null}
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-white/[0.07] bg-[#060410]/80 px-5 py-4">
-          <p className="font-mono text-[9px] uppercase tracking-[0.1em] text-mist/35">
+        <div className="flex items-center justify-between gap-3 border-t border-paper/15 bg-ink px-5 py-4">
+          <p className="font-mono text-[9px] uppercase tracking-[0.1em] text-paper/30">
             {job?.finishedAt ? `finished ${clockTime(job.finishedAt)}` : "worker pipeline"}
           </p>
           {job?.status === "failed" ? (
@@ -314,14 +297,15 @@ export function JobDrawer({
               type="button"
               onClick={handleRetry}
               disabled={retrying}
-              className="flex items-center gap-2 rounded-full bg-[linear-gradient(100deg,#8b5cf6,#d946ef)] px-4 py-2 text-[11.5px] font-medium text-white shadow-[0_10px_30px_-12px_rgba(217,70,239,0.8)] transition-all hover:brightness-110 disabled:opacity-50"
+              className="flex items-center gap-2 border border-brass bg-brass px-4 py-2 text-[11.5px] font-medium text-ink hover:border-paper hover:bg-paper disabled:opacity-50"
             >
-              {retrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+              {retrying ? (
+                <span className="h-3 w-3 animate-spin border border-ink/30 border-t-ink" aria-hidden="true" />
+              ) : null}
               Retry job
             </button>
           ) : (
-            <span className="flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.1em] text-mist/45">
-              {StatusIcon ? <StatusIcon className="h-3 w-3" /> : null}
+            <span className="border border-paper/10 bg-paper/[0.03] px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.1em] text-paper/40">
               {meta?.label ?? "loading"}
             </span>
           )}
